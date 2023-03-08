@@ -1,0 +1,42 @@
+[
+  {
+    "email": "user@justinstone.net",
+    "handle": "user",
+    "saltedHash": "$2a$10$PZZJd787H6a5tzTNxMX.NOq7u4rywr/Apa5XzMEaLXV9WJ6Ct06SG",
+    "id": "1",
+    "createdAt": "2017-01-01T00:00:00Z",
+    "updatedAt": "2018-01-01T00:00:20Z"
+  },
+  {
+    "email": "user2@justinstone.net",
+    "handle": "user2",
+    "saltedHash": "$2a$10$PZZJd787H6a5tzTNxMX.NOq7u4rywr/Apa5XzMEaLXV9WJ6Ct06SG",
+    "id": "2",
+    "createdAt": "2017-01-01T00:00:01Z",
+    "updatedAt": "2018-01-01T00:00:19Z"
+  },
+  {
+    "email": "user3@justinstone.net",
+    "handle": "user3",
+    "saltedHash": "$2a$10$XdLPi4OEE1HhSgdtZekQAu.0P0W.sPn4KcojbRZr2hOfkBDFSQI0a",
+    "id": "3",
+    "createdAt": "2017-01-01T00:00:02Z",
+    "updatedAt": "2018-01-01T00:00:18Z"
+  },
+  {
+    "email": "user4@justinstone.net",
+    "handle": "user4",
+    "saltedHash": "$2a$10$wjp0yIJYZ0FP/DhHbQ3kwugsPEklf15zw/oWx.0sTyjoSDIsXaF7a",
+    "id": "4",
+    "createdAt": "2017-01-01T00:00:03Z",
+    "updatedAt": "2018-01-01T00:00:17Z"
+  },
+  {
+    "email": "user5@justinstone.net",
+    "handle": "user5",
+    "saltedHash": "$2a$10$rg4W8bMMqjvh4Q9AbA89qOvdh40P8tfsIhI9Dvv.IPGKcFxlwxn6C",
+    "id": "5",
+    "createdAt": "2017-01-01T00:00:04Z",
+    "updatedAt": "2018-01-01T00:00:16Z"
+  }
+]
