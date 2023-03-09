@@ -1,4 +1,4 @@
-module github.com/stone1549/yapyapyap/api
+module github.com/stone1549/yapyapyap/auth
 
 go 1.20
 
