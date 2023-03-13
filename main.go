@@ -22,6 +22,13 @@ func main() {
 		panic(fmt.Sprintf("Unable to load configuration: %s", err.Error()))
 	}
 
+	configMiddleware := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			ctx := context.WithValue(request.Context(), "config", config)
+			next.ServeHTTP(writer, request.WithContext(ctx))
+		})
+	}
+
 	repo, err := service.NewUserRepository(config)
 
 	if err != nil {
@@ -66,6 +73,7 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.URLFormat)
 	r.Use(render.SetContentType(render.ContentTypeJSON))
+	r.Use(configMiddleware)
 	r.Use(repoMiddleWare)
 	r.Use(tokenMiddleware)
 
@@ -76,6 +84,7 @@ func main() {
 
 	r.Route("/session", func(r chi.Router) {
 		r.With(service.NewSessionMiddleware).Put("/", service.NewSession)
+		r.With(service.JwtAuthMiddleware).With(service.RefreshSessionMiddleware).Get("/", service.RefreshSession)
 	})
 
 	r.Route("/user", func(r chi.Router) {
