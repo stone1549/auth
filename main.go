@@ -89,6 +89,8 @@ func main() {
 
 	r.Route("/user", func(r chi.Router) {
 		r.With(service.NewUserMiddleware).Put("/", service.NewUser)
+		r.With(service.GetUserMiddleware).Get("/{id}", service.GetUser)
+		r.With(service.UpdateProfileMiddleware).Patch("/{id}", service.UpdateProfile)
 	})
 
 	err = http.ListenAndServe(":3333", r)

@@ -20,7 +20,14 @@ type inMemoryUserRepository struct {
 }
 
 // NewUser adds a user to the repo.
-func (imr *inMemoryUserRepository) NewUser(email string, handle string, password string) (string, error) {
+func (imr *inMemoryUserRepository) NewUser(
+	email string,
+	handle string,
+	password string,
+	gender Gender,
+	age int,
+	topics []string,
+) (string, error) {
 	if email == "" {
 		return "", newErrRepository("email is required")
 	} else if handle == "" {
@@ -45,7 +52,14 @@ func (imr *inMemoryUserRepository) NewUser(email string, handle string, password
 	createdAt := time.Now()
 	updatedAt := createdAt
 
-	imr.usersByEmail[email] = &storedUser{User{Email: email, Username: handle}, id, string(saltedHash),
+	imr.usersByEmail[email] = &storedUser{
+		User{
+			Email:       email,
+			Username:    handle,
+			UserProfile: UserProfile{Gender: gender, Age: age, Topics: topics},
+		},
+		id,
+		string(saltedHash),
 		createdAt, updatedAt}
 
 	return id, nil
@@ -68,7 +82,40 @@ func (imr *inMemoryUserRepository) Authenticate(email string, password string) (
 		return User{}, nil
 	}
 
-	return User{user.Id, user.Email, user.Username}, nil
+	return User{user.Id, user.Email, user.Username, user.UserProfile}, nil
+}
+
+func (imr *inMemoryUserRepository) GetUser(id string) (User, error) {
+	if id == "" {
+		return User{}, newErrRepository("id is required")
+	}
+
+	for _, user := range imr.usersByEmail {
+		if user.Id == id {
+			return User{user.Id, user.Email, user.Username, user.UserProfile}, nil
+		}
+	}
+
+	return User{}, newErrRepository("user not found")
+}
+
+func (imr *inMemoryUserRepository) UpdateProfile(userId string, profile UserProfile) error {
+	if profile.Gender == "" {
+		return newErrRepository("gender is required")
+	} else if profile.Age == 0 {
+		return newErrRepository("age is required")
+	} else if profile.Topics == nil {
+		return newErrRepository("topics is required")
+	}
+
+	user, ok := imr.usersByEmail[userId]
+	if !ok {
+		return newErrRepository("user not found")
+	}
+
+	user.UserProfile = profile
+
+	return nil
 }
 
 // MakeInMemoryRepository constructs an in memory backed UserRepository from the given configuration.

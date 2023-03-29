@@ -3,13 +3,15 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
 type newUserRequest struct {
-	Email    string `json:"email"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Email       string `json:"email"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+	UserProfile `json:"profile"`
 }
 
 type newUserResponse struct {
@@ -56,10 +58,18 @@ func NewUserMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		id, err := userRepo.NewUser(reqUser.Email, reqUser.Username, reqUser.Password)
+		id, err := userRepo.NewUser(
+			reqUser.Email,
+			reqUser.Username,
+			reqUser.Password,
+			reqUser.UserProfile.Gender,
+			reqUser.UserProfile.Age,
+			reqUser.UserProfile.Topics,
+		)
 
 		if err != nil {
 			RenderResponse(w, r, NewInternalServerErr("internal error"))
+			log.Println(err)
 			return
 		}
 

@@ -19,8 +19,10 @@ func newErrRepository(msg string) error {
 
 // UserRepository represents a data source through which users can be managed.
 type UserRepository interface {
+	GetUser(id string) (User, error)
+	UpdateProfile(userId string, profile UserProfile) error
 	// NewUser adds a user to the repo.
-	NewUser(email string, handle string, password string) (string, error)
+	NewUser(email string, handle string, password string, gender Gender, age int, topics []string) (string, error)
 	// Authenticate validates email and password combo with what is stored in the repo. Returns users unique id on
 	// success and empty string on failure
 	Authenticate(email string, password string) (User, error)

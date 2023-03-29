@@ -2,14 +2,17 @@ package service
 
 import (
 	"database/sql"
-	_ "github.com/lib/pq"
+	pg "github.com/lib/pq"
 	"github.com/twinj/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 const (
+	getUser           = "SELECT l.email, l.username, up.gender, up.age, up.topics  FROM login l JOIN user_profile up ON (l.id=up.user_id)  WHERE l.id=$1"
+	updateProfile     = "UPDATE user_profile (gender, age, topics) VALUES ($1, $2, $3) WHERE user_id=$4"
 	insertLogin       = "INSERT INTO login (id, email, username, salted_hash) VALUES ($1, $2, $3, $4)"
-	authenticate      = "SELECT salted_hash, id, username FROM login WHERE email=$1"
+	insertUserProfile = "INSERT INTO user_profile (user_id, gender, age, topics) VALUES ($1, $2, $3, $4)"
+	authenticate      = "SELECT l.salted_hash, l.id, l.username, up.gender, up.age, up.topics  FROM login l JOIN user_profile up ON (l.id=up.user_id)  WHERE l.email=$1"
 	insertStoredLogin = "INSERT INTO login (id, email, username, salted_hash, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)"
 )
 
@@ -18,13 +21,26 @@ type postgresqlUserRepository struct {
 }
 
 // NewUser adds a user to the repo.
-func (impr *postgresqlUserRepository) NewUser(email string, handle string, password string) (string, error) {
+func (impr *postgresqlUserRepository) NewUser(
+	email string,
+	handle string,
+	password string,
+	gender Gender,
+	age int,
+	topics []string,
+) (string, error) {
 	if email == "" {
 		return "", newErrRepository("email is required")
 	} else if handle == "" {
 		return "", newErrRepository("handle is required")
 	} else if password == "" {
 		return "", newErrRepository("password is required")
+	} else if gender == "" {
+		return "", newErrRepository("gender is required")
+	} else if age == 0 {
+		return "", newErrRepository("age is required")
+	} else if topics == nil {
+		return "", newErrRepository("topics is required")
 	}
 
 	id := uuid.NewV4().String()
@@ -35,8 +51,28 @@ func (impr *postgresqlUserRepository) NewUser(email string, handle string, passw
 		return "", newErrRepository("unable to generate password")
 	}
 
-	_, err = impr.db.Exec(insertLogin, id, email, handle, saltedHash)
+	tx, err := impr.db.Begin()
 
+	if err != nil {
+		_ = tx.Rollback()
+		return "", err
+	}
+
+	_, err = tx.Exec(insertLogin, id, email, handle, saltedHash)
+
+	if err != nil {
+		_ = tx.Rollback()
+		return "", err
+	}
+
+	_, err = tx.Exec(insertUserProfile, id, gender, age, pg.Array(topics))
+
+	if err != nil {
+		_ = tx.Rollback()
+		return "", err
+	}
+
+	err = tx.Commit()
 	return id, err
 }
 
@@ -54,8 +90,11 @@ func (impr *postgresqlUserRepository) Authenticate(email string, password string
 	var saltedHash string
 	var id string
 	var username string
+	var gender Gender
+	var age int
+	var topics []string
 
-	err := row.Scan(&saltedHash, &id, &username)
+	err := row.Scan(&saltedHash, &id, &username, &gender, &age, &topics)
 
 	if err == sql.ErrNoRows {
 		return User{}, nil
@@ -69,7 +108,45 @@ func (impr *postgresqlUserRepository) Authenticate(email string, password string
 		return User{}, nil
 	}
 
-	return User{id, email, username}, nil
+	return User{id, email, username, UserProfile{Gender: gender, Age: age, Topics: topics}}, nil
+}
+
+func (imr *postgresqlUserRepository) GetUser(id string) (User, error) {
+	if id == "" {
+		return User{}, newErrRepository("id is required")
+	}
+	row := imr.db.QueryRow(id)
+	var email string
+	var username string
+	var gender Gender
+	var age int
+	var topics []string
+
+	err := row.Scan(&email, &username, &gender, &age, &topics)
+
+	if err == sql.ErrNoRows {
+		return User{}, nil
+	} else if err != nil {
+		return User{}, err
+	}
+
+	return User{id, email, username, UserProfile{Gender: gender, Age: age, Topics: topics}}, nil
+}
+
+func (impr *postgresqlUserRepository) UpdateProfile(userId string, profile UserProfile) error {
+	if userId == "" {
+		return newErrRepository("userId is required")
+	} else if profile.Gender == "" {
+		return newErrRepository("gender is required")
+	} else if profile.Age == 0 {
+		return newErrRepository("age is required")
+	} else if profile.Topics == nil {
+		return newErrRepository("topics is required")
+	}
+
+	_, err := impr.db.Exec(updateProfile, profile.Gender, profile.Age, profile.Topics, userId)
+
+	return err
 }
 
 func loadInitPostgresqlData(db *sql.DB, dataset string) error {
